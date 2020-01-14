@@ -401,20 +401,26 @@ int main(int argc, char const *argv[])
 {
 	setupTerminal();
 
-	solidity::test::IsolTestOptions options(&TestTool::editor);
+	{
+		using IOptions = solidity::test::IsolTestOptions;
+		std::unique_ptr<IOptions> options(new IOptions(&TestTool::editor));
 
-	try
-	{
-		if (options.parse(argc, argv))
-			options.validate();
-		else
+		try
+		{
+			if (!options->parse(argc, argv))
+				return -1;
+
+			options->validate();
+			solidity::test::CommonOptions::setSingleton(std::move(options));
+		}
+		catch (std::exception const& _exception)
+		{
+			cerr << _exception.what() << endl;
 			return 1;
+		}
 	}
-	catch (std::exception const& _exception)
-	{
-		cerr << _exception.what() << endl;
-		return 1;
-	}
+
+	auto& options = dynamic_cast<solidity::test::IsolTestOptions const&>(solidity::test::CommonOptions::get());
 
 	bool disableSemantics = !solidity::test::EVMHost::getVM(options.evmonePath.string());
 	if (disableSemantics)
