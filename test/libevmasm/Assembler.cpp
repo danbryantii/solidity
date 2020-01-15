@@ -74,8 +74,6 @@ BOOST_AUTO_TEST_CASE(all_assembly_items)
 	_assembly.appendLibraryAddress("someLibrary");
 	// PushTag + Operation
 	_assembly.appendJump(tag);
-	// PushString
-	_assembly.append("Unused feature for pushing string");
 	// PushData
 	_assembly.append(bytes{0x1, 0x2, 0x3, 0x4});
 	// PushSubSize
