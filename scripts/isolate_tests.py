@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # This script reads C++ or RST source files and writes all
 # multi-line strings into individual files.
@@ -12,8 +12,8 @@ import os
 import hashlib
 from os.path import join, isfile
 
-def extract_test_cases(path):
-    lines = open(path, 'rb').read().splitlines()
+def extract_test_cases(_path):
+    lines = open(_path, 'rb').read().splitlines()
 
     inside = False
     delimiter = ''
@@ -37,13 +37,13 @@ def extract_test_cases(path):
 # Contract sources are indented by 4 spaces.
 # Look for `pragma solidity`, `contract`, `library` or `interface`
 # and abort a line not indented properly.
-def extract_docs_cases(path):
+def extract_docs_cases(_path):
     inside = False
     extractedLines = []
     tests = []
 
     # Collect all snippets of indented blocks
-    for l in open(path, 'rb').read().splitlines():
+    for l in open(_path, 'rb').read().splitlines():
         if l != '':
             if not inside and l.startswith(' '):
                 # start new test
@@ -57,7 +57,7 @@ def extract_docs_cases(path):
     # Filter all tests that do not contain Solidity or are intended incorrectly.
     for lines in extractedLines:
         if re.search(r'^\s{0,3}' + codeStart, lines, re.MULTILINE):
-            print("Intendation error in " + path + ":")
+            print("Intendation error in " + _path + ":")
             print(lines)
             exit(1)
         if re.search(r'^\s{4}' + codeStart, lines, re.MULTILINE):
@@ -73,30 +73,30 @@ def write_cases(f, tests):
         remainder = re.sub(r'^ {4}', '', test, 0, re.MULTILINE)
         open('test_%s_%s.sol' % (hashlib.sha256(test).hexdigest(), cleaned_filename), 'wb').write(remainder)
 
-def extract_and_write(f, path):
-        if docs:
-            cases = extract_docs_cases(path)
+def extract_and_write(f, _path):
+    if IS_DOCS:
+        cases = extract_docs_cases(_path)
+    else:
+        if f.endswith('.sol'):
+            cases = [open(_path, 'r').read()]
         else:
-            if f.endswith('.sol'):
-                cases = [open(path, 'r').read()]
-            else:
-                cases = extract_test_cases(path)
-        write_cases(f, cases)
+            cases = extract_test_cases(_path)
+    write_cases(f, cases)
 
 if __name__ == '__main__':
-    path = sys.argv[1]
-    docs = False
+    path_name = sys.argv[1]
+    IS_DOCS = False
     if len(sys.argv) > 2 and sys.argv[2] == 'docs':
-      docs = True
+        IS_DOCS = True
 
-    if isfile(path):
-        extract_and_write(path, path)
+    if isfile(path_name):
+        extract_and_write(path_name, path_name)
     else:
-        for root, subdirs, files in os.walk(path):
+        for root, subdirs, files in os.walk(path_name):
             if '_build' in subdirs:
                 subdirs.remove('_build')
             if 'compilationTests' in subdirs:
                 subdirs.remove('compilationTests')
             for f in files:
-                path = join(root, f)
-                extract_and_write(f, path)
+                path_name = join(root, f)
+                extract_and_write(f, path_name)
